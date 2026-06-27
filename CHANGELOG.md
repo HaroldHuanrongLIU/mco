@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-06-27
+### Fixed
+- Fixed run-mode final text extraction for Pi JSONL streams so thinking events and user prompts are not returned as the final answer.
+
 ## [0.10.1] - 2026-06-27
 ### Changed
 - Updated README and README.zh-CN to document Hermes/Pi opt-in support, safe default providers, and Pi's read-only tool allowlist.

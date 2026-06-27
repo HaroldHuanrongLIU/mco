@@ -145,25 +145,34 @@ def _collect_final_text_candidates(
     if len(candidates) >= limit:
         return
     if isinstance(payload, dict):
+        if payload.get("role") == "user":
+            return
         payload_type = payload.get("type")
+        normalized_type = payload_type.lower() if isinstance(payload_type, str) else ""
         if isinstance(payload_type, str):
-            payload_type = payload_type.lower()
+            payload_type = normalized_type
             if payload_type == "text" and isinstance(payload.get("text"), str):
                 _append_text_candidate(candidates, seen, payload.get("text", ""), limit=limit)
+            if payload_type in ("text_start", "text_delta", "text_end"):
+                for key in ("text", "delta", "content"):
+                    value = payload.get(key)
+                    if isinstance(value, str):
+                        _append_text_candidate(candidates, seen, value, limit=limit)
             if payload_type in ("result", "final", "completion", "assistant", "message"):
                 for key in ("result", "final_text", "text", "content", "message", "response", "output"):
                     value = payload.get(key)
                     if isinstance(value, str):
                         _append_text_candidate(candidates, seen, value, limit=limit)
 
-        for key in ("final_text", "result", "text", "content", "message", "response", "output", "output_text"):
-            value = payload.get(key)
-            if isinstance(value, str):
-                if _looks_like_nested_json_blob(value):
-                    for nested_payload in _decode_json_fragments(value):
-                        _collect_final_text_candidates(nested_payload, candidates, seen, limit=limit)
-                else:
-                    _append_text_candidate(candidates, seen, value, limit=limit)
+        if normalized_type not in ("thinking", "thinking_start", "thinking_delta", "thinking_end"):
+            for key in ("final_text", "result", "text", "content", "message", "response", "output", "output_text"):
+                value = payload.get(key)
+                if isinstance(value, str):
+                    if _looks_like_nested_json_blob(value):
+                        for nested_payload in _decode_json_fragments(value):
+                            _collect_final_text_candidates(nested_payload, candidates, seen, limit=limit)
+                    else:
+                        _append_text_candidate(candidates, seen, value, limit=limit)
 
         for value in payload.values():
             if isinstance(value, (dict, list)):
